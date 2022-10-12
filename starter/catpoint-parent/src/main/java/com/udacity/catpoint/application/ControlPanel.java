@@ -21,7 +21,7 @@ public class ControlPanel extends JPanel {
 
     public ControlPanel(SecurityService securityService) {
         super();
-        setLayout(new MigLzzayout());
+        setLayout(new MigLayout());
         this.securityService = securityService;
 
         JLabel panelLabel = new JLabel("System Control");
