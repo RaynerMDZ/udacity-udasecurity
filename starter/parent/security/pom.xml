@@ -8,6 +8,7 @@
   </parent>
 
   <artifactId>security</artifactId>
+  <groupId>com.udacity.security</groupId>
   <version>1.0-SNAPSHOT</version>
 
   <packaging>jar</packaging>
@@ -21,6 +22,17 @@
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>com.miglayout</groupId>
+      <artifactId>miglayout-swing</artifactId>
+      <version>11.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.udacity.image</groupId>
+      <artifactId>image</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 
 </project>

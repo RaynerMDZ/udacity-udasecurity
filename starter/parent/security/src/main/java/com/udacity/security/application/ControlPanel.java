@@ -1,8 +1,8 @@
-package com.udacity.catpoint.application;
+package com.udacity.security.application;
 
-import com.udacity.catpoint.data.ArmingStatus;
-import com.udacity.catpoint.service.SecurityService;
-import com.udacity.catpoint.service.StyleService;
+import com.udacity.security.data.SecurityService;
+import com.udacity.image.service.StyleService;
+import com.udacity.security.data.ArmingStatus;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
@@ -15,8 +15,8 @@ import java.util.stream.Collectors;
  */
 public class ControlPanel extends JPanel {
 
-    private SecurityService securityService;
-    private Map<ArmingStatus, JButton> buttonMap;
+    private final SecurityService securityService;
+    private final Map<ArmingStatus, JButton> buttonMap;
 
 
     public ControlPanel(SecurityService securityService) {

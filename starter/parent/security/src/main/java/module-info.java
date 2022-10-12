@@ -1,5 +1,9 @@
 module security {
-    exports com.udacity.catpoint.application;
-    exports com.udacity.catpoint.data;
+    requires java.desktop;
+    requires com.google.common;
+    requires com.google.gson;
+    requires java.prefs;
     requires image;
+    requires com.miglayout.swing;
+
 }
