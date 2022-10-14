@@ -1,6 +1,6 @@
 package com.udacity.security.data;
 
-import com.udacity.image.service.FakeImageService;
+import com.udacity.image.service.ImageService;
 import com.udacity.security.application.StatusListener;
 
 import java.awt.image.BufferedImage;
@@ -14,13 +14,13 @@ import java.util.Set;
  * This is the class that should contain most of the business logic for our system, and it is the
  * class you will be writing unit tests for.
  */
-public class SecurityService {
+public final class SecurityService {
 
-    private FakeImageService imageService;
-    private SecurityRepository securityRepository;
-    private Set<StatusListener> statusListeners = new HashSet<>();
+    private final ImageService imageService;
+    private final SecurityRepository securityRepository;
+    private final Set<StatusListener> statusListeners = new HashSet<>();
 
-    public SecurityService(SecurityRepository securityRepository, FakeImageService imageService) {
+    public SecurityService(SecurityRepository securityRepository, ImageService imageService) {
         this.securityRepository = securityRepository;
         this.imageService = imageService;
     }
@@ -31,7 +31,7 @@ public class SecurityService {
      * @param armingStatus
      */
     public void setArmingStatus(ArmingStatus armingStatus) {
-        if(armingStatus == ArmingStatus.DISARMED) {
+        if (armingStatus == ArmingStatus.DISARMED) {
             setAlarmStatus(AlarmStatus.NO_ALARM);
         }
         securityRepository.setArmingStatus(armingStatus);
@@ -43,7 +43,7 @@ public class SecurityService {
      * @param cat True if a cat is detected, otherwise false.
      */
     private void catDetected(Boolean cat) {
-        if(cat && getArmingStatus() == ArmingStatus.ARMED_HOME) {
+        if (cat && getArmingStatus() == ArmingStatus.ARMED_HOME) {
             setAlarmStatus(AlarmStatus.ALARM);
         } else {
             setAlarmStatus(AlarmStatus.NO_ALARM);

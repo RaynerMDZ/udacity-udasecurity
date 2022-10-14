@@ -16,14 +16,13 @@ import java.io.IOException;
  * by uploading their own picture, and 'scan' the picture, sending it for image analysis
  */
 public class ImagePanel extends JPanel implements StatusListener {
-    private SecurityService securityService;
-
-    private JLabel cameraHeader;
-    private JLabel cameraLabel;
+    private final SecurityService securityService;
+    private final JLabel cameraHeader;
+    private final JLabel cameraLabel;
     private BufferedImage currentCameraImage;
 
-    private int IMAGE_WIDTH = 300;
-    private int IMAGE_HEIGHT = 225;
+    private final int IMAGE_WIDTH = 300;
+    private final int IMAGE_HEIGHT = 225;
 
     public ImagePanel(SecurityService securityService) {
         super();
@@ -46,9 +45,9 @@ public class ImagePanel extends JPanel implements StatusListener {
             chooser.setCurrentDirectory(new File("."));
             chooser.setDialogTitle("Select Picture");
             chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            if(chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
-                return;
-            }
+
+            if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
+
             try {
                 currentCameraImage = ImageIO.read(chooser.getSelectedFile());
                 Image tmp = new ImageIcon(currentCameraImage).getImage();
@@ -78,7 +77,7 @@ public class ImagePanel extends JPanel implements StatusListener {
 
     @Override
     public void catDetected(boolean catDetected) {
-        if(catDetected) {
+        if (catDetected) {
             cameraHeader.setText("DANGER - CAT DETECTED");
         } else {
             cameraHeader.setText("Camera Feed - No Cats Detected");

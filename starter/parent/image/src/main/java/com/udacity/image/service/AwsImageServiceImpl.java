@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  * Steps to make work (optional):
  * 1. Log into AWS and navigate to the AWS console
  * 2. Search for IAM then click on Users in the IAM nav bar
- * 3. Click Add User. Enter a user name and select Programmatic access
+ * 3. Click Add User. Enter a username and select Programmatic access
  * 4. Next to Permissions. Select 'Attach existing policies directly' and attack 'AmazonRekognitionFullAccess'
  * 5. Next through the remaining screens. Copy the 'Access key ID' and 'Secret access key' for this user.
  * 6. Create a config.properties file in the src/main/resources dir containing the keys referenced in this class
@@ -33,14 +33,14 @@ import java.util.stream.Collectors;
  *      aws.secret=[your Secret access key]
  *      aws.region=[an aws region of choice. For example: us-east-2]
  */
-public class AwsImageService {
+public class AwsImageServiceImpl implements ImageService {
 
-    private final Logger log = LoggerFactory.getLogger(AwsImageService.class);
+    private final Logger log = LoggerFactory.getLogger(AwsImageServiceImpl.class);
 
     //aws recommendation is to maintain only a single instance of client objects
     private static RekognitionClient rekognitionClient;
 
-    public AwsImageService() {
+    public AwsImageServiceImpl() {
         Properties props = new Properties();
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("config.properties")) {
             props.load(is);
@@ -63,10 +63,11 @@ public class AwsImageService {
     /**
      * Returns true if the provided image contains a cat.
      * @param image Image to scan
-     * @param confidenceThreshhold Minimum threshhold to consider for cat. For example, 90.0f would require 90% confidence minimum
-     * @return
+     * @param confidenceThreshold Minimum threshold to consider for cat. For example, 90.0f would require 90% confidence minimum
+     * @return True if the image contains a cat, otherwise false.
      */
-    public boolean imageContainsCat(BufferedImage image, float confidenceThreshhold) {
+    @Override
+    public boolean imageContainsCat(BufferedImage image, float confidenceThreshold) {
         Image awsImage = null;
         try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
             ImageIO.write(image, "jpg", os);
@@ -75,10 +76,10 @@ public class AwsImageService {
             log.error("Error building image byte array", ioe);
             return false;
         }
-        DetectLabelsRequest detectLabelsRequest = DetectLabelsRequest.builder().image(awsImage).minConfidence(confidenceThreshhold).build();
+        DetectLabelsRequest detectLabelsRequest = DetectLabelsRequest.builder().image(awsImage).minConfidence(confidenceThreshold).build();
         DetectLabelsResponse response = rekognitionClient.detectLabels(detectLabelsRequest);
         logLabelsForFun(response);
-        return response.labels().stream().filter(l -> l.name().toLowerCase().contains("cat")).findFirst().isPresent();
+        return response.labels().stream().anyMatch(l -> l.name().toLowerCase().contains("cat"));
     }
 
     private void logLabelsForFun(DetectLabelsResponse response) {

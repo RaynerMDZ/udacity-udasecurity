@@ -6,4 +6,5 @@ module security {
     requires image;
     requires com.miglayout.swing;
     opens com.udacity.security.data to com.google.gson;
+    
 }

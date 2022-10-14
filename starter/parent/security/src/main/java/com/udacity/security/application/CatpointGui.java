@@ -1,6 +1,7 @@
 package com.udacity.security.application;
 
-import com.udacity.image.service.FakeImageService;
+import com.udacity.image.service.FakeImageServiceImpl;
+import com.udacity.image.service.ImageService;
 import com.udacity.security.data.SecurityService;
 import com.udacity.security.data.PretendDatabaseSecurityRepositoryImpl;
 import com.udacity.security.data.SecurityRepository;
@@ -15,8 +16,10 @@ import javax.swing.*;
  * all our dependencies and providing them to other classes as necessary.
  */
 public class CatpointGui extends JFrame {
+    private static final String CONSTRAINT = "wrap";
+    private static final String TITLE = "Catpoint Security System";
     private final SecurityRepository securityRepository = new PretendDatabaseSecurityRepositoryImpl();
-    private FakeImageService imageService = new FakeImageService();
+    private final ImageService imageService = new FakeImageServiceImpl();
     private final SecurityService securityService = new SecurityService(securityRepository, imageService);
     private DisplayPanel displayPanel = new DisplayPanel(securityService);
     private ControlPanel controlPanel = new ControlPanel(securityService);
@@ -26,17 +29,16 @@ public class CatpointGui extends JFrame {
     public CatpointGui() {
         setLocation(100, 100);
         setSize(600, 850);
-        setTitle("Very Secure App");
+        setTitle(TITLE);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JPanel mainPanel = new JPanel();
+        final JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new MigLayout());
-        mainPanel.add(displayPanel, "wrap");
-        mainPanel.add(imagePanel, "wrap");
-        mainPanel.add(controlPanel, "wrap");
+        mainPanel.add(displayPanel, CONSTRAINT);
+        mainPanel.add(imagePanel, CONSTRAINT);
+        mainPanel.add(controlPanel, CONSTRAINT);
         mainPanel.add(sensorPanel);
 
         getContentPane().add(mainPanel);
-
     }
 }

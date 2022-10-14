@@ -7,6 +7,7 @@ import com.udacity.security.data.StyleService;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
+import java.util.Objects;
 
 /**
  * Panel that allows users to add sensors to their system. Sensors may be
@@ -19,11 +20,11 @@ public class SensorPanel extends JPanel {
     private JLabel panelLabel = new JLabel("Sensor Management");
     private JLabel newSensorName = new JLabel("Name:");
     private JLabel newSensorType = new JLabel("Sensor Type:");
-    private JTextField newSensorNameField = new JTextField();
-    private JComboBox newSensorTypeDropdown = new JComboBox(SensorType.values());
-    private JButton addNewSensorButton = new JButton("Add New Sensor");
+    private final JTextField newSensorNameField = new JTextField();
+    private final JComboBox newSensorTypeDropdown = new JComboBox(SensorType.values());
+    private final JButton addNewSensorButton = new JButton("Add New Sensor");
 
-    private JPanel sensorListPanel;
+    private final JPanel sensorListPanel;
     private JPanel newSensorPanel;
 
     public SensorPanel(SecurityService securityService) {
@@ -34,7 +35,7 @@ public class SensorPanel extends JPanel {
         panelLabel.setFont(StyleService.HEADING_FONT);
         addNewSensorButton.addActionListener(e ->
                 addSensor(new Sensor(newSensorNameField.getText(),
-                        SensorType.valueOf(newSensorTypeDropdown.getSelectedItem().toString()))));
+                        SensorType.valueOf(Objects.requireNonNull(newSensorTypeDropdown.getSelectedItem()).toString()))));
 
         newSensorPanel = buildAddSensorPanel();
         sensorListPanel = new JPanel();
@@ -101,7 +102,7 @@ public class SensorPanel extends JPanel {
      * @param sensor The sensor to add
      */
     private void addSensor(Sensor sensor) {
-        if(securityService.getSensors().size() < 4) {
+        if (securityService.getSensors().size() < 4) {
             securityService.addSensor(sensor);
             updateSensorList(sensorListPanel);
         } else {

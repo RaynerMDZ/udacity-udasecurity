@@ -13,9 +13,9 @@ import java.util.prefs.Preferences;
  * memory and writes it to user preferences between app loads. This implementation is
  * intentionally a little hard to use in unit tests, so watch out!
  */
-public class PretendDatabaseSecurityRepositoryImpl implements SecurityRepository{
+public class PretendDatabaseSecurityRepositoryImpl implements SecurityRepository {
 
-    private final Set<Sensor> sensors;
+    private Set<Sensor> sensors;
     private AlarmStatus alarmStatus;
     private ArmingStatus armingStatus;
 
@@ -24,8 +24,8 @@ public class PretendDatabaseSecurityRepositoryImpl implements SecurityRepository
     private static final String ALARM_STATUS = "ALARM_STATUS";
     private static final String ARMING_STATUS = "ARMING_STATUS";
 
-    private static final Preferences prefs = Preferences.userNodeForPackage(PretendDatabaseSecurityRepositoryImpl.class);
-    private static final Gson gson = new Gson(); //used to serialize objects into JSON
+    private static Preferences prefs = Preferences.userNodeForPackage(PretendDatabaseSecurityRepositoryImpl.class);
+    private static Gson gson = new Gson(); //used to serialize objects into JSON
 
     public PretendDatabaseSecurityRepositoryImpl() {
         //load system state from prefs, or else default
@@ -35,11 +35,14 @@ public class PretendDatabaseSecurityRepositoryImpl implements SecurityRepository
         //we've serialized our sensor objects for storage, which should be a good warning sign that
         // this is likely an impractical solution for a real system
         String sensorString = prefs.get(SENSORS, null);
-        if(sensorString == null) {
+        System.out.println(sensorString);
+
+        if (sensorString == null) {
             sensors = new TreeSet<>();
         } else {
             Type type = new TypeToken<Set<Sensor>>() {
             }.getType();
+
             sensors = gson.fromJson(sensorString, type);
         }
     }
