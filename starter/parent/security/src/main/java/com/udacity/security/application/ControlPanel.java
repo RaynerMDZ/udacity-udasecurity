@@ -1,7 +1,7 @@
 package com.udacity.security.application;
 
 import com.udacity.security.data.SecurityService;
-import com.udacity.image.service.StyleService;
+import com.udacity.security.data.StyleService;
 import com.udacity.security.data.ArmingStatus;
 import net.miginfocom.swing.MigLayout;
 
