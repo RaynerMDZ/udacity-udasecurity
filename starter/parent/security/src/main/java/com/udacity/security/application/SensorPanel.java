@@ -66,13 +66,13 @@ public class SensorPanel extends JPanel implements StatusListener {
      */
     private void updateSensorList(JPanel p) {
         p.removeAll();
-        securityService.getSensors().stream().sorted().forEach(s -> {
-            JLabel sensorLabel = new JLabel(String.format("%s(%s): %s", s.getName(),  s.getSensorType().toString(),(s.getActive() ? "Active" : "Inactive")));
-            JButton sensorToggleButton = new JButton((s.getActive() ? "Deactivate" : "Activate"));
+        securityService.getSensors().stream().sorted().forEach(sensor -> {
+            JLabel sensorLabel = new JLabel(String.format("%s(%s): %s", sensor.getName(),  sensor.getSensorType().toString(),(sensor.getActive() ? "Active" : "Inactive")));
+            JButton sensorToggleButton = new JButton((sensor.getActive() ? "Deactivate" : "Activate"));
             JButton sensorRemoveButton = new JButton("Remove Sensor");
 
-            sensorToggleButton.addActionListener(e -> setSensorActivity(s, !s.getActive()) );
-            sensorRemoveButton.addActionListener(e -> removeSensor(s));
+            sensorToggleButton.addActionListener(e -> setSensorActivity(sensor) );
+            sensorRemoveButton.addActionListener(e -> removeSensor(sensor));
 
             //hard code some sizes, tsk tsk
             p.add(sensorLabel, "width 300:300:300");
@@ -89,8 +89,8 @@ public class SensorPanel extends JPanel implements StatusListener {
      * @param sensor The sensor to update
      * @param isActive The sensor's activation status
      */
-    private void setSensorActivity(Sensor sensor, Boolean isActive) {
-        securityService.changeSensorActivationStatus(sensor, isActive);
+    private void setSensorActivity(Sensor sensor) {
+        securityService.changeSensorActivationStatus(sensor);
         updateSensorList(sensorListPanel);
     }
 

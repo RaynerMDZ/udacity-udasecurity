@@ -75,4 +75,14 @@ public class Sensor implements Comparable<Sensor> {
                 .compare(this.sensorId, o.sensorId)
                 .result();
     }
+
+    @Override
+    public String toString() {
+        return "Sensor {" +
+                "sensorId=" + sensorId +
+                ", name='" + name + '\'' +
+                ", active=" + active +
+                ", sensorType=" + sensorType +
+                '}';
+    }
 }
