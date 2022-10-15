@@ -93,9 +93,11 @@ public final class SecurityService {
             return; //no problem if the system is disarmed
         }
 
-        switch(securityRepository.getAlarmStatus()) {
+        switch (securityRepository.getAlarmStatus()) {
             case NO_ALARM -> setAlarmStatus(AlarmStatus.PENDING_ALARM);
             case PENDING_ALARM -> setAlarmStatus(AlarmStatus.ALARM);
+            default -> {
+            }
         }
     }
 
@@ -103,9 +105,11 @@ public final class SecurityService {
      * Internal method for updating the alarm status when a sensor has been deactivated
      */
     private void handleSensorDeactivated() {
-        switch(securityRepository.getAlarmStatus()) {
+        switch (securityRepository.getAlarmStatus()) {
             case PENDING_ALARM -> setAlarmStatus(AlarmStatus.NO_ALARM);
             case ALARM -> setAlarmStatus(AlarmStatus.PENDING_ALARM);
+            default -> {
+            }
         }
     }
 
@@ -127,22 +131,6 @@ public final class SecurityService {
         }
 
         sensor.setActive(active);
-        securityRepository.updateSensor(sensor);
-    }
-
-    /**
-     * Change the activation status for the specified sensor when no activate status is passed and update alarm status if necessary.
-     * @param sensor The sensor to change the activation status for.
-     */
-    public void changeSensorActivationStatus(Sensor sensor) {
-        AlarmStatus alarmStatus = this.getAlarmStatus();
-        ArmingStatus armingStatus = this.getArmingStatus();
-
-        if (alarmStatus == AlarmStatus.PENDING_ALARM && !sensor.getActive()) {
-            handleSensorDeactivated();
-        } else if (alarmStatus == AlarmStatus.ALARM && armingStatus == ArmingStatus.DISARMED) {
-            handleSensorDeactivated();
-        }
         securityRepository.updateSensor(sensor);
     }
 

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -14,6 +15,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -77,12 +79,14 @@ class SecurityServiceTest {
         when(securityRepository.getAlarmStatus())
                 .thenReturn(AlarmStatus.PENDING_ALARM);
 
-        //when
-        sensor.setActive(false);
-        securityService.changeSensorActivationStatus(sensor);
+
+        // when
+        sensor.setActive(true);
+        securityService.changeSensorActivationStatus(sensor, false);
 
         //then
         verify(securityRepository, times(1)).setAlarmStatus(AlarmStatus.NO_ALARM);
+
     }
 
     @ParameterizedTest
@@ -175,17 +179,24 @@ class SecurityServiceTest {
     @EnumSource(value = ArmingStatus.class, names = {"ARMED_HOME", "ARMED_AWAY"})
     void ifSystemIsArmed_setAllSensorsToInactive(ArmingStatus armingStatus) {
         //given
-        Set<Sensor> sensors = getSensors(3, true);
+        Set<Sensor> sensors = Set.of(
+                new Sensor(sensorId, SensorType.DOOR),
+                new Sensor(sensorId, SensorType.WINDOW),
+                new Sensor(sensorId, SensorType.MOTION)
+        );
+
+        //when
         when(securityRepository.getAlarmStatus())
                 .thenReturn(AlarmStatus.PENDING_ALARM);
         when(securityRepository.getSensors())
                 .thenReturn(sensors);
 
-        //when
+        sensors.forEach(sensor -> sensor.setActive(true));
         securityService.setArmingStatus(armingStatus);
 
         //then
-        securityService.getSensors().forEach(sensor -> Assertions.assertFalse(sensor.getActive()));
+        securityService.getSensors()
+                .forEach(sensor -> Assertions.assertFalse(sensor.getActive()));
     }
 
     @Test
@@ -202,7 +213,8 @@ class SecurityServiceTest {
         securityService.setArmingStatus(ArmingStatus.ARMED_HOME);
 
         //then
-        verify(securityRepository, times(1)).setAlarmStatus(AlarmStatus.ALARM);
+        verify(securityRepository, times(1))
+                .setAlarmStatus(AlarmStatus.ALARM);
     }
 
 

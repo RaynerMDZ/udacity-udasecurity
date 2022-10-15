@@ -22,8 +22,8 @@ public class ImagePanel extends JPanel implements StatusListener {
     private final JLabel cameraLabel;
     private BufferedImage currentCameraImage;
 
-    private final int IMAGE_WIDTH = 300;
-    private final int IMAGE_HEIGHT = 225;
+    private static final int IMAGE_WIDTH = 300;
+    private static final int IMAGE_HEIGHT = 225;
 
     public ImagePanel(SecurityService securityService) {
         super();
@@ -53,7 +53,7 @@ public class ImagePanel extends JPanel implements StatusListener {
                 currentCameraImage = ImageIO.read(chooser.getSelectedFile());
                 Image tmp = new ImageIcon(currentCameraImage).getImage();
                 cameraLabel.setIcon(new ImageIcon(tmp.getScaledInstance(IMAGE_WIDTH, IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
-            } catch (IOException |NullPointerException ioe) {
+            } catch (IOException ex) {
                 JOptionPane.showMessageDialog(null, "Invalid image selected.");
             }
             repaint();
