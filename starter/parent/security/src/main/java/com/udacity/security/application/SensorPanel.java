@@ -1,9 +1,6 @@
 package com.udacity.security.application;
 
-import com.udacity.security.data.Sensor;
-import com.udacity.security.data.SensorType;
-import com.udacity.security.data.SecurityService;
-import com.udacity.security.data.StyleService;
+import com.udacity.security.data.*;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
@@ -13,19 +10,19 @@ import java.util.Objects;
  * Panel that allows users to add sensors to their system. Sensors may be
  * manually set to "active" and "inactive" to test the system.
  */
-public class SensorPanel extends JPanel {
+public class SensorPanel extends JPanel implements StatusListener {
 
-    private SecurityService securityService;
+    private final SecurityService securityService;
 
-    private JLabel panelLabel = new JLabel("Sensor Management");
-    private JLabel newSensorName = new JLabel("Name:");
-    private JLabel newSensorType = new JLabel("Sensor Type:");
+    private final JLabel panelLabel = new JLabel("Sensor Management");
+    private final JLabel newSensorName = new JLabel("Name:");
+    private final JLabel newSensorType = new JLabel("Sensor Type:");
     private final JTextField newSensorNameField = new JTextField();
     private final JComboBox newSensorTypeDropdown = new JComboBox(SensorType.values());
     private final JButton addNewSensorButton = new JButton("Add New Sensor");
 
     private final JPanel sensorListPanel;
-    private JPanel newSensorPanel;
+    private final JPanel newSensorPanel;
 
     public SensorPanel(SecurityService securityService) {
         super();
@@ -116,6 +113,21 @@ public class SensorPanel extends JPanel {
      */
     private void removeSensor(Sensor sensor) {
         securityService.removeSensor(sensor);
+        updateSensorList(sensorListPanel);
+    }
+
+    @Override
+    public void notify(AlarmStatus status) {
+        //do nothing
+    }
+
+    @Override
+    public void catDetected(boolean catDetected) {
+        //do nothing
+    }
+
+    @Override
+    public void sensorStatusChanged() {
         updateSensorList(sensorListPanel);
     }
 }

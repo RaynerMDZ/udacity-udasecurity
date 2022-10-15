@@ -5,6 +5,6 @@ module security {
     requires java.prefs;
     requires image;
     requires com.miglayout.swing;
+    requires java.sql;
     opens com.udacity.security.data to com.google.gson;
-    
 }

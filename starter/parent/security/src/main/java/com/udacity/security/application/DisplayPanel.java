@@ -32,7 +32,6 @@ public class DisplayPanel extends JPanel implements StatusListener {
         add(panelLabel, "span 2, wrap");
         add(systemStatusLabel);
         add(currentStatusLabel, "wrap");
-
     }
 
     @Override

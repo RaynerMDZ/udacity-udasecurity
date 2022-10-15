@@ -17,6 +17,7 @@ import java.io.IOException;
  */
 public class ImagePanel extends JPanel implements StatusListener {
     private final SecurityService securityService;
+
     private final JLabel cameraHeader;
     private final JLabel cameraLabel;
     private BufferedImage currentCameraImage;

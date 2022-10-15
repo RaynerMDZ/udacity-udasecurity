@@ -1,6 +1,5 @@
 package com.udacity.security.data;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
 import com.udacity.image.service.ImageService;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,14 +14,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SecurityServiceTest {
-
-    private static final int PORT = 9090;
-    private static final String URL = "http://localhost:" + PORT;
     private final String sensorId = UUID.randomUUID().toString();
     private Sensor sensor;
     private SecurityService securityService;
@@ -30,7 +25,6 @@ class SecurityServiceTest {
     private ImageService imageService;
     @Mock
     private SecurityRepository securityRepository;
-    private static final WireMockServer wireMockServer = new WireMockServer(wireMockConfig().port(PORT));
 
     private Set<Sensor> getSensors(int count, boolean status) {
         Set<Sensor> sensors = new HashSet<>();
@@ -44,19 +38,7 @@ class SecurityServiceTest {
     @BeforeEach
     void setUpSecurityService() {
         sensor = new Sensor(sensorId, SensorType.DOOR);
-
-        wireMockServer.resetAll();
         securityService = new SecurityService(securityRepository, imageService);
-    }
-
-    @BeforeAll
-    static void setUp() {
-        wireMockServer.start();
-    }
-
-    @AfterAll
-    static void tearDown() {
-        wireMockServer.stop();
     }
 
     @Test
@@ -97,6 +79,7 @@ class SecurityServiceTest {
 
         //when
         sensor.setActive(false);
+        securityService.changeSensorActivationStatus(sensor);
 
         //then
         verify(securityRepository, times(1)).setAlarmStatus(AlarmStatus.NO_ALARM);
