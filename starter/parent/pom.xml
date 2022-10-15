@@ -86,12 +86,6 @@
         <scope>test</scope>
       </dependency>
 
-      <dependency>
-        <groupId>com.github.spotbugs</groupId>
-        <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>4.7.2.1</version>
-      </dependency>
-
     </dependencies>
   </dependencyManagement>
 
@@ -136,6 +130,33 @@
         <plugin>
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>3.4.1</version>
+        </plugin>
+
+
+        <plugin>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.2.0</version>
+          <executions>
+            <execution>
+              <id>copy-sitedescriptor</id>
+              <!-- fetch site.xml before creating site documentation -->
+              <phase>pre-site</phase>
+              <goals>
+                <goal>copy-resources</goal>
+              </goals>
+              <configuration>
+                <outputDirectory>${basedir}/src/site/</outputDirectory>
+                <resources>
+                  <resource>
+                    <directory>/src/site/</directory>
+                    <includes>
+                      <include>**/site.xml</include>
+                    </includes>
+                  </resource>
+                </resources>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>

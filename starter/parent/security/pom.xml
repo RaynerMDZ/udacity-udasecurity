@@ -19,7 +19,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>14</maven.compiler.source>
     <maven.compiler.target>14</maven.compiler.target>
-    <dep.version>1.0-SNAPSHOT</dep.version>
   </properties>
 
   <dependencies>
@@ -60,8 +59,13 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.spotbugs</groupId>
-      <artifactId>spotbugs-maven-plugin</artifactId>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
 
   </dependencies>
@@ -96,4 +100,5 @@
       </plugin>
     </plugins>
   </build>
+
 </project>

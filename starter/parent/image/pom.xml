@@ -43,10 +43,6 @@
       <artifactId>rekognition</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>com.github.spotbugs</groupId>
-      <artifactId>spotbugs-maven-plugin</artifactId>
-    </dependency>
   </dependencies>
 
 </project>
