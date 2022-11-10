@@ -31,10 +31,18 @@ public final class SecurityService {
      * @param armingStatus
      */
     public void setArmingStatus(ArmingStatus armingStatus) {
-        if (armingStatus == ArmingStatus.DISARMED) {
-            setAlarmStatus(AlarmStatus.NO_ALARM);
+        // set the arming status with a switch statement
+        switch (armingStatus) {
+            case DISARMED -> this.setAlarmStatus(AlarmStatus.NO_ALARM);
+            case ARMED_HOME -> {if (isCatDetected) this.setAlarmStatus(AlarmStatus.ALARM);}
+            default -> this.getSensors().forEach(sensor -> this.changeSensorActivationStatus(sensor, false));
         }
-        securityRepository.setArmingStatus(armingStatus);
+
+
+//        if (armingStatus == ArmingStatus.DISARMED) {
+//            setAlarmStatus(AlarmStatus.NO_ALARM);
+//        }
+//        this.securityRepository.setArmingStatus(armingStatus);
     }
 
     /**
@@ -133,7 +141,8 @@ public final class SecurityService {
             }
         }
 
-        sensor.setActive(active);
+        // update sensor to opposite of current status
+        sensor.setActive(!active);
         securityRepository.updateSensor(sensor);
     }
 

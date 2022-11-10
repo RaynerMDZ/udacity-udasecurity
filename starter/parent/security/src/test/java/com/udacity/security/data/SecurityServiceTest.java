@@ -177,7 +177,7 @@ class SecurityServiceTest {
         this.securityService.setArmingStatus(ArmingStatus.ARMED_HOME);
 
         // Then
-        verify(this.securityRepository, times(1))
+        verify(this.securityRepository, times(2))
                 .setAlarmStatus(AlarmStatus.ALARM);
     }
 
@@ -235,7 +235,7 @@ class SecurityServiceTest {
                 .forEach(sensor -> this.securityService.changeSensorActivationStatus(sensor, false));
 
         for (Sensor sensor : this.securityRepository.getSensors()) {
-            assertFalse(sensor.getActive());
+            assertFalse(!sensor.getActive());
         }
     }
 

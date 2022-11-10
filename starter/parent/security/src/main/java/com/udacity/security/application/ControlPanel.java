@@ -41,7 +41,8 @@ public class ControlPanel extends JPanel {
         });
 
         //map order above is arbitrary, so loop again in order to add buttons in enum-order
-        Arrays.stream(ArmingStatus.values()).forEach(status -> add(buttonMap.get(status)));
+        Arrays.stream(ArmingStatus.values())
+                .forEach(status -> add(buttonMap.get(status)));
 
         ArmingStatus currentStatus = securityService.getArmingStatus();
         buttonMap.get(currentStatus).setBackground(currentStatus.getColor());

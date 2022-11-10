@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import java.lang.reflect.Type;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 /**
@@ -26,6 +27,13 @@ public class PretendDatabaseSecurityRepositoryImpl implements SecurityRepository
     private static final Gson gson = new Gson(); //used to serialize objects into JSON
 
     public PretendDatabaseSecurityRepositoryImpl() {
+        // Clear preferences on startup and handle exceptions
+        try {
+            prefs.clear();
+        } catch (BackingStoreException e) {
+            e.printStackTrace();
+        }
+
         //load system state from prefs, or else default
         alarmStatus = AlarmStatus.valueOf(prefs.get(ALARM_STATUS, AlarmStatus.NO_ALARM.toString()));
         armingStatus = ArmingStatus.valueOf(prefs.get(ARMING_STATUS, ArmingStatus.DISARMED.toString()));
