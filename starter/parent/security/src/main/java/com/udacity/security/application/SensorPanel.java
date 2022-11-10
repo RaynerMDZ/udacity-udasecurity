@@ -87,10 +87,9 @@ public class SensorPanel extends JPanel implements StatusListener {
     /**
      * Asks the securityService to change a sensor activation status and then rebuilds the current sensor list
      * @param sensor The sensor to update
-     * @param isActive The sensor's activation status
      */
     private void setSensorActivity(Sensor sensor) {
-        securityService.changeSensorActivationStatus(sensor);
+        securityService.changeSensorActivationStatus(sensor, sensor.getActive());
         updateSensorList(sensorListPanel);
     }
 
