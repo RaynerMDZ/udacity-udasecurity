@@ -5,7 +5,11 @@ import com.udacity.security.application.StatusListener;
 
 import java.awt.image.BufferedImage;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /**
  * Service that receives information about changes to the security system. Responsible for
  * forwarding updates to the repository and making any decisions about changing the system state.
@@ -31,18 +35,31 @@ public final class SecurityService {
      * @param armingStatus
      */
     public void setArmingStatus(ArmingStatus armingStatus) {
-        // set the arming status with a switch statement
+
         switch (armingStatus) {
             case DISARMED -> this.setAlarmStatus(AlarmStatus.NO_ALARM);
-            case ARMED_HOME -> {if (isCatDetected) this.setAlarmStatus(AlarmStatus.ALARM);}
-            default -> this.getSensors().forEach(sensor -> this.changeSensorActivationStatus(sensor, false));
+            case ARMED_HOME -> {
+                if (this.isCatDetected) {
+                    this.setAlarmStatus(AlarmStatus.ALARM);
+                } else {
+                    this.setAlarmStatus(AlarmStatus.NO_ALARM);
+                }
+            }
+            default -> {
+
+                // Prevents the systems to hit a ConcurrentModificationException when two sensors are modified on the same thread.
+                List<Sensor> sensors = new CopyOnWriteArrayList<>(this.getSensors());
+                Iterator<Sensor> iterator = sensors.iterator();
+
+                while (iterator.hasNext()) {
+                    Sensor sensor = iterator.next();
+                    this.changeSensorActivationStatus(sensor, false);
+                }
+            }
         }
 
-
-//        if (armingStatus == ArmingStatus.DISARMED) {
-//            setAlarmStatus(AlarmStatus.NO_ALARM);
-//        }
-//        this.securityRepository.setArmingStatus(armingStatus);
+        securityRepository.setArmingStatus(armingStatus);
+        statusListeners.forEach(sl -> sl.sensorStatusChanged());
     }
 
     /**
@@ -58,7 +75,6 @@ public final class SecurityService {
         } else if (!cat && this.getAllSensorsFromState(false)) {
             setAlarmStatus(AlarmStatus.NO_ALARM);
         }
-
         statusListeners.forEach(sl -> sl.catDetected(cat));
     }
 
@@ -87,13 +103,13 @@ public final class SecurityService {
      * Internal method for updating the alarm status when a sensor has been activated.
      */
     private void handleSensorActivated() {
-        if (securityRepository.getArmingStatus() == ArmingStatus.DISARMED) {
+        if (this.securityRepository.getArmingStatus() == ArmingStatus.DISARMED) {
             return; //no problem if the system is disarmed
         }
 
-        switch (securityRepository.getAlarmStatus()) {
-            case NO_ALARM -> setAlarmStatus(AlarmStatus.PENDING_ALARM);
-            case PENDING_ALARM -> setAlarmStatus(AlarmStatus.ALARM);
+        switch (this.securityRepository.getAlarmStatus()) {
+            case NO_ALARM -> this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
+            case PENDING_ALARM -> this.setAlarmStatus(AlarmStatus.ALARM);
             default -> {} //do nothing if the alarm is already active
         }
     }
@@ -102,27 +118,27 @@ public final class SecurityService {
      * Internal method for updating the alarm status when a sensor has been deactivated
      */
     private void handleSensorDeactivated() {
-        if (securityRepository.getArmingStatus() == ArmingStatus.DISARMED) {
+        if (this.securityRepository.getArmingStatus() == ArmingStatus.DISARMED) {
             return;
         }
 
-        switch (securityRepository.getAlarmStatus()) {
-            case PENDING_ALARM -> setAlarmStatus(AlarmStatus.NO_ALARM);
-            case ALARM -> setAlarmStatus(AlarmStatus.PENDING_ALARM);
+        switch (this.securityRepository.getAlarmStatus()) {
+            case PENDING_ALARM -> this.setAlarmStatus(AlarmStatus.NO_ALARM);
+            case ALARM -> this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
             default -> {} //do nothing
         }
     }
 
     public void changeSensorActivationStatus(Sensor sensor) {
-        AlarmStatus actualAlarmStatus = this.getAlarmStatus();
-        ArmingStatus actualArmingStatus = this.getArmingStatus();
+        AlarmStatus actualAlarmStatus = this.securityRepository.getAlarmStatus();
+        ArmingStatus actualArmingStatus = this.securityRepository.getArmingStatus();
 
         if (actualAlarmStatus == AlarmStatus.PENDING_ALARM && !sensor.getActive()) {
-            handleSensorDeactivated();
+            this.handleSensorDeactivated();
         } else if (actualAlarmStatus == AlarmStatus.ALARM && actualArmingStatus == ArmingStatus.DISARMED) {
-            handleSensorDeactivated();
+            this.handleSensorDeactivated();
         }
-        securityRepository.updateSensor(sensor);
+        this.securityRepository.updateSensor(sensor);
     }
 
     /**
@@ -131,7 +147,7 @@ public final class SecurityService {
      *
      */
     public void changeSensorActivationStatus(Sensor sensor, boolean active) {
-        AlarmStatus actualAlarmStatus = securityRepository.getAlarmStatus();
+        AlarmStatus actualAlarmStatus = this.securityRepository.getAlarmStatus();
 
         if (actualAlarmStatus != AlarmStatus.ALARM) {
             if (active) {
@@ -143,7 +159,7 @@ public final class SecurityService {
 
         // update sensor to opposite of current status
         sensor.setActive(!active);
-        securityRepository.updateSensor(sensor);
+        this.securityRepository.updateSensor(sensor);
     }
 
     /**
