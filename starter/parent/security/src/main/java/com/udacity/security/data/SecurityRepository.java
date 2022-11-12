@@ -14,6 +14,6 @@ public interface SecurityRepository {
     Set<Sensor> getSensors();
     AlarmStatus getAlarmStatus();
     ArmingStatus getArmingStatus();
-
-
+    boolean areSensorsArmed();
+    void setAllSensorsInactive();
 }

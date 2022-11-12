@@ -8,17 +8,22 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.awt.image.BufferedImage;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class SecurityServiceTest {
     private static final float CONFIDENCE_THRESHOLD = 50.0f;
     private SecurityService securityService;
@@ -27,7 +32,7 @@ class SecurityServiceTest {
     private final String randomUUID = UUID.randomUUID().toString();
     @Mock
     private ImageService imageService;
-    @Mock
+    //@Mock
     private SecurityRepository securityRepository;
 
     private Set<Sensor> generateSensors(int count, boolean status) {
@@ -41,6 +46,7 @@ class SecurityServiceTest {
 
     @BeforeEach
     void setUp() {
+        securityRepository = Mockito.mock(SecurityRepository.class, Mockito.CALLS_REAL_METHODS);
         this.securityService = new SecurityService(securityRepository, imageService);
         this.sensor = new Sensor(this.randomUUID, SensorType.DOOR);
         this.image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
@@ -55,11 +61,9 @@ class SecurityServiceTest {
         // Given - System status is armed
         when(this.securityRepository.getArmingStatus())
                 .thenReturn(ArmingStatus.ARMED_HOME);
-        when(this.securityRepository.getAlarmStatus())
-                .thenReturn(AlarmStatus.NO_ALARM);
 
         // When - A sensor becomes activated
-        this.securityService.changeSensorActivationStatus(this.sensor, true);
+        this.securityService.changeSensorActivationStatus(this.sensor, sensor.getActive());
 
         // Then - Put the alarm into pending status
         verify(this.securityRepository, times(1))
@@ -76,9 +80,13 @@ class SecurityServiceTest {
                 .thenReturn(ArmingStatus.ARMED_HOME);
         when(this.securityRepository.getAlarmStatus())
                 .thenReturn(AlarmStatus.PENDING_ALARM);
+        when(this.securityRepository.getSensors())
+                .thenReturn(generateSensors(1, false));
+        when(this.securityRepository.areSensorsArmed())
+                .thenReturn(true);
 
         // When - A sensor becomes activated and the system is already pending
-        this.securityService.changeSensorActivationStatus(this.sensor, true);
+        this.securityService.changeSensorActivationStatus(this.sensor, this.sensor.getActive());
 
         // Then - Put the alarm into on status
         verify(this.securityRepository, times(1))
@@ -93,13 +101,38 @@ class SecurityServiceTest {
         // Given - System alarm is armed
         when(this.securityRepository.getAlarmStatus())
                 .thenReturn(AlarmStatus.PENDING_ALARM);
+        when(this.securityRepository.getArmingStatus())
+                .thenReturn(ArmingStatus.ARMED_HOME);
+        when(this.securityRepository.getSensors())
+                .thenReturn(generateSensors(3, true));
 
-        // When - All sensors are inactive
-        Set<Sensor> sensors = this.generateSensors(5, false);
-        sensors.forEach(sensor -> this.securityService.changeSensorActivationStatus(sensor));
+        // Invocation State
+        // [sensor1] -> [sensor2] (2 invocations)
+        // this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
+
+        // [sensor3] (1 invocation)
+        // this.setAlarmStatus(AlarmStatus.NO_ALARM);
+
+        // Sensor 1 = ACTIVE
+        // Sensor 2 = ACTIVE
+        // Sensor 3 = ACTIVE
+
+        // sensor1.IsActive = FALSE // INACTIVE
+        // this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
+
+        // sensor2.IsActive = FALSE // INACTIVE
+        // this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
+
+        // sensor3.IsActive = FALSE // INACTIVE
+        // this.setAlarmStatus(AlarmStatus.NO_ALARM);
+
+        this.securityRepository.getSensors()
+                .forEach(sensor -> this.securityService.changeSensorActivationStatus(sensor, sensor.getActive()));
 
         // Then - Return to no alarm state
-        verify(this.securityRepository, times(5))
+        verify(this.securityRepository, times(2))
+                .setAlarmStatus(AlarmStatus.PENDING_ALARM);
+        verify(this.securityRepository, times(1))
                 .setAlarmStatus(AlarmStatus.NO_ALARM);
     }
 
@@ -113,12 +146,17 @@ class SecurityServiceTest {
         // Given
         when(this.securityRepository.getAlarmStatus())
                 .thenReturn(AlarmStatus.ALARM);
+        when(this.securityRepository.getArmingStatus())
+                .thenReturn(ArmingStatus.ARMED_HOME);
+        when(this.securityRepository.getSensors())
+                .thenReturn(generateSensors(1, sensorStatus));
 
         // When
-        this.sensor.setActive(sensorStatus);
-        this.securityService.changeSensorActivationStatus(this.sensor, sensorStatus);
+        var sensor = this.securityRepository.getSensors().iterator().next();
+        // this.securityService.changeSensorActivationStatus(sensor, sensor.getActive());
 
         // Then
+
         verify(this.securityRepository, never())
                 .setAlarmStatus(any(AlarmStatus.class));
     }
@@ -131,10 +169,26 @@ class SecurityServiceTest {
         // Given - when the system is in pending state
         when(this.securityRepository.getAlarmStatus())
                 .thenReturn(AlarmStatus.PENDING_ALARM);
+        when(this.securityRepository.getArmingStatus())
+                .thenReturn(ArmingStatus.ARMED_HOME);
+        when(this.securityRepository.areSensorsArmed())
+                .thenReturn(true);
+
+        var sensor1 = new Sensor("A", SensorType.DOOR);
+        sensor1.setActive(true);
+        var sensor2 = new Sensor("B", SensorType.DOOR);
+        sensor2.setActive(false);
+
+        when(this.securityRepository.getSensors())
+                .thenReturn(new HashSet<>(Arrays.asList(sensor1, sensor2)));
 
         // When - a sensor is activated while already active
-        this.sensor.setActive(true);
-        this.securityService.changeSensorActivationStatus(this.sensor, true);
+        var sensors = this.securityRepository.getSensors().stream()
+                .sorted(Comparator.comparing(Sensor::getName))
+                .collect(Collectors.toList());
+
+        var sensor = sensors.get(1);
+        this.securityService.changeSensorActivationStatus(sensor, sensor.getActive());
 
         // Then - change it to alarm state
         verify(this.securityRepository, times(1))
@@ -151,6 +205,8 @@ class SecurityServiceTest {
         // Given
         when(this.securityRepository.getAlarmStatus())
                 .thenReturn(alarmStatus);
+        when(this.securityRepository.getArmingStatus())
+                .thenReturn(ArmingStatus.DISARMED);
 
         // When
         this.sensor.setActive(false);
@@ -174,10 +230,9 @@ class SecurityServiceTest {
 
         // When
         this.securityService.processImage(this.image);
-        this.securityService.setArmingStatus(ArmingStatus.ARMED_HOME);
 
         // Then
-        verify(this.securityRepository, times(2))
+        verify(this.securityRepository, times(1))
                 .setAlarmStatus(AlarmStatus.ALARM);
     }
 
@@ -205,8 +260,8 @@ class SecurityServiceTest {
     @Test
     void ifSystemIsDisarmed_setStatusToNoAlarm() {
         // Given - System is disarmed
-//        when(securityRepository.getArmingStatus())
-//                .thenReturn(ArmingStatus.DISARMED);
+        when(securityRepository.getArmingStatus())
+                .thenReturn(ArmingStatus.DISARMED);
 
         // When - System is disarmed
         this.securityService.setArmingStatus(ArmingStatus.DISARMED);
@@ -224,6 +279,8 @@ class SecurityServiceTest {
         // Given - System is armed, generate 3 sensors
         when(this.securityRepository.getAlarmStatus())
                 .thenReturn(AlarmStatus.ALARM);
+        when(this.securityRepository.getArmingStatus())
+                .thenReturn(ArmingStatus.ARMED_HOME);
         when(this.securityRepository.getSensors())
                 .thenReturn(generateSensors(3, true));
 
@@ -231,12 +288,12 @@ class SecurityServiceTest {
         this.securityService.setArmingStatus(ArmingStatus.ARMED_HOME);
 
         // Then - Set sensors to inactive
-        this.securityRepository.getSensors()
-                .forEach(sensor -> this.securityService.changeSensorActivationStatus(sensor, false));
-
-        for (Sensor sensor : this.securityRepository.getSensors()) {
-            assertFalse(!sensor.getActive());
-        }
+        verify(this.securityRepository, times(1))
+                .setAllSensorsInactive();
+        verify(this.securityRepository, times(1))
+                .setAlarmStatus(AlarmStatus.NO_ALARM);
+        verify(this.securityRepository, times(1))
+                .setArmingStatus(ArmingStatus.ARMED_HOME);
     }
 
     /**

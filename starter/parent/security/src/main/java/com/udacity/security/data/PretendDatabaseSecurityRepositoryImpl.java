@@ -4,8 +4,11 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 
 import java.lang.reflect.Type;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -73,6 +76,8 @@ public class PretendDatabaseSecurityRepositoryImpl implements SecurityRepository
 
     @Override
     public void setAlarmStatus(AlarmStatus alarmStatus) {
+
+        // no-op
         this.alarmStatus = alarmStatus;
         prefs.put(ALARM_STATUS, this.alarmStatus.toString());
     }
@@ -96,5 +101,28 @@ public class PretendDatabaseSecurityRepositoryImpl implements SecurityRepository
     @Override
     public ArmingStatus getArmingStatus() {
         return armingStatus;
+    }
+
+    @Override
+    public boolean areSensorsArmed() {
+        for (Sensor sensor : this.getSensors()) {
+            if (!sensor.getActive()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void setAllSensorsInactive() {
+        List<Sensor> sensors = new CopyOnWriteArrayList<>(this.getSensors());
+        Iterator<Sensor> iterator = sensors.iterator();
+
+        while (iterator.hasNext()) {
+            Sensor sensor = iterator.next();
+
+            sensor.setActive(false);
+            this.updateSensor(sensor);
+        }
     }
 }

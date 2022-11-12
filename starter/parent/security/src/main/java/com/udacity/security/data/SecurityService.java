@@ -17,7 +17,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * class you will be writing unit tests for.
  */
 public final class SecurityService {
-
     private final ImageService imageService;
     private final SecurityRepository securityRepository;
     private final Set<StatusListener> statusListeners;
@@ -36,13 +35,28 @@ public final class SecurityService {
      */
     public void setArmingStatus(ArmingStatus armingStatus) {
 
+        // GOOD
         if (armingStatus == ArmingStatus.DISARMED) {
             this.setAlarmStatus(AlarmStatus.NO_ALARM);
         }
 
+        // When ARMED
+        else if (armingStatus == ArmingStatus.ARMED_HOME) {
 
+            // if already armed, do nothing
+            if (this.securityRepository.getArmingStatus() == ArmingStatus.ARMED_HOME) {
+                // set all sensors to inactive
+                this.securityRepository.setAllSensorsInactive();
+                this.setAlarmStatus(AlarmStatus.NO_ALARM);
+            }
+        }
+
+
+
+
+        // GOOD
         // if the system is armed-home while a cat is detected, the alarm should be set to alarm
-        if (armingStatus == ArmingStatus.ARMED_HOME && isCatDetected) {
+        else if (armingStatus == ArmingStatus.ARMED_HOME && isCatDetected) {
             this.setAlarmStatus(AlarmStatus.ALARM);
         }
         // if alarm is armed and sensor becomes activates and the system is already pending alarm, set the alarm status to alarm
@@ -55,7 +69,10 @@ public final class SecurityService {
 
             while (iterator.hasNext()) {
                 Sensor sensor = iterator.next();
-                this.changeSensorActivationStatus(sensor, false);
+
+                if (sensor.getActive()) {
+                    this.changeSensorActivationStatus(sensor, sensor.getActive());
+                }
             }
         }
 
@@ -115,11 +132,24 @@ public final class SecurityService {
             return; //no problem if the system is disarmed
         }
 
-        switch (this.securityRepository.getAlarmStatus()) {
-            case NO_ALARM -> this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
-            case PENDING_ALARM -> this.setAlarmStatus(AlarmStatus.ALARM);
-            default -> {} //do nothing if the alarm is already active
+        switch (this.securityRepository.getArmingStatus()) {
+            case ARMED_HOME -> {
+
+                if (this.securityRepository.areSensorsArmed()) {
+                    this.setAlarmStatus(AlarmStatus.ALARM);
+                } else {
+                    this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
+                }
+            }
+
+            default -> {}
         }
+
+//        switch (this.securityRepository.getAlarmStatus()) {
+//            case NO_ALARM -> this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
+//            case PENDING_ALARM -> this.setAlarmStatus(AlarmStatus.ALARM);
+//            default -> {} //do nothing if the alarm is already active
+//        }
     }
 
     /**
@@ -130,15 +160,19 @@ public final class SecurityService {
             return;
         }
 
-        switch (this.securityRepository.getAlarmStatus()) {
-            case PENDING_ALARM -> this.setAlarmStatus(AlarmStatus.NO_ALARM);
-            case ALARM -> this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
-            default -> {} //do nothing
+        // if all sensors are inactive
+        if (this.getAllSensorsFromState(false)) {
+            this.setAlarmStatus(AlarmStatus.NO_ALARM);
+        } else if (!this.securityRepository.areSensorsArmed()) {
+            this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
         }
     }
 
     public void changeSensorActivationStatus(Sensor sensor) {
+        // NO_ALARM (Mock)
         AlarmStatus actualAlarmStatus = this.securityRepository.getAlarmStatus();
+
+        // ARMED_HOME (Mock)
         ArmingStatus actualArmingStatus = this.securityRepository.getArmingStatus();
 
         if (actualAlarmStatus == AlarmStatus.PENDING_ALARM && !sensor.getActive()) {
@@ -146,6 +180,7 @@ public final class SecurityService {
         } else if (actualAlarmStatus == AlarmStatus.ALARM && actualArmingStatus == ArmingStatus.DISARMED) {
             this.handleSensorDeactivated();
         }
+
         this.securityRepository.updateSensor(sensor);
     }
 
@@ -155,19 +190,19 @@ public final class SecurityService {
      *
      */
     public void changeSensorActivationStatus(Sensor sensor, boolean active) {
-        AlarmStatus actualAlarmStatus = this.securityRepository.getAlarmStatus();
-
-        if (actualAlarmStatus != AlarmStatus.ALARM) {
-            if (active) {
-                this.handleSensorActivated();
-            } else if (sensor.getActive()) {
-                this.handleSensorDeactivated();
-            }
-        }
+//        AlarmStatus actualAlarmStatus = this.securityRepository.getAlarmStatus();
 
         // update sensor to opposite of current status
+        boolean previousState = sensor.getActive();
         sensor.setActive(!active);
         this.securityRepository.updateSensor(sensor);
+
+        if (!active) {
+            this.handleSensorActivated();
+        } else if (previousState) {
+            this.handleSensorDeactivated();
+        }
+
     }
 
     /**
@@ -188,11 +223,77 @@ public final class SecurityService {
     }
 
     public void addSensor(Sensor sensor) {
+        if (this.securityRepository.getSensors().size() > 0 && this.securityRepository.getAlarmStatus() == AlarmStatus.ALARM) {
+            this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
+        }
         securityRepository.addSensor(sensor);
     }
 
     public void removeSensor(Sensor sensor) {
         securityRepository.removeSensor(sensor);
+
+        // Case 1
+        // List Sensors:
+        // 1. Sensor 1 = ACTIVE
+        // 2. Sensor 2 = INACTIVE
+        // 3. Sensor 3 = INACTIVE
+
+        // System Status: PENDING
+        // Remove(1)
+        // System Status: NO_ALARM
+
+        // Case 2
+        // List Sensors:
+        // 1. Sensor 1 = ACTIVE
+        // 2. Sensor 2 = ACTIVE
+
+        // System Status: ALARM
+        // Remove(1)
+        // System Status: ALARM
+
+        // Case 3 - check
+        // List Sensors:
+        // 1. Sensor 1 = ACTIVE
+        // 2. Sensor 2 = INACTIVE
+
+        // System Status: PENDING
+        // Remove(2)
+        // System Status: ALARM
+
+        // Case 4 - check
+        // List Sensors:
+        // 1. Sensor 1 = ACTIVE
+
+        // System Status: ALARM
+        // Remove(1)
+        // System Status: NO_ALARM
+
+        // Case 5 - check
+        // List Sensors:
+        // 1. Sensor 1 = INACTIVE
+
+        // System Status: NO_ALARM
+        // Remove(1)
+        // System Status: NO_ALARM
+
+        // Case 6
+        // List Sensors:
+        // 1. Sensor 1 = ACTIVE
+        // 2. Sensor 2 = INACTIVE
+
+        // System Status: PENDING
+        // Remove(1)
+        // System Status: NO_ALARM
+
+       if (this.securityRepository.getSensors().isEmpty()) {
+            this.setAlarmStatus(AlarmStatus.NO_ALARM);
+       }
+       else if (this.securityRepository.areSensorsArmed()) {
+           this.setAlarmStatus(AlarmStatus.ALARM);
+
+       } else if (!this.securityRepository.areSensorsArmed() && this.securityRepository.getSensors().size() == 1) {
+           this.setAlarmStatus(AlarmStatus.NO_ALARM);
+       }
     }
 
     public ArmingStatus getArmingStatus() {
