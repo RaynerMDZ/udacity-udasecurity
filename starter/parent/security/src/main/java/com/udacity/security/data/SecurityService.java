@@ -36,25 +36,33 @@ public final class SecurityService {
      */
     public void setArmingStatus(ArmingStatus armingStatus) {
 
-        switch (armingStatus) {
-            case DISARMED -> this.setAlarmStatus(AlarmStatus.NO_ALARM);
-            case ARMED_HOME -> {
-                if (this.isCatDetected) {
-                    this.setAlarmStatus(AlarmStatus.ALARM);
-                } else {
-                    this.setAlarmStatus(AlarmStatus.NO_ALARM);
-                }
+        if (armingStatus == ArmingStatus.DISARMED) {
+            this.setAlarmStatus(AlarmStatus.NO_ALARM);
+        }
+
+
+        // if the system is armed-home while a cat is detected, the alarm should be set to alarm
+        if (armingStatus == ArmingStatus.ARMED_HOME && isCatDetected) {
+            this.setAlarmStatus(AlarmStatus.ALARM);
+        }
+        // if alarm is armed and sensor becomes activates and the system is already pending alarm, set the alarm status to alarm
+
+        else {
+            // Prevents the systems to hit a ConcurrentModificationException when two sensors are modified on the same thread.
+            // Implemented using a fail-safe iterator.
+            List<Sensor> sensors = new CopyOnWriteArrayList<>(this.getSensors());
+            Iterator<Sensor> iterator = sensors.iterator();
+
+            while (iterator.hasNext()) {
+                Sensor sensor = iterator.next();
+                this.changeSensorActivationStatus(sensor, false);
             }
-            default -> {
+        }
 
-                // Prevents the systems to hit a ConcurrentModificationException when two sensors are modified on the same thread.
-                List<Sensor> sensors = new CopyOnWriteArrayList<>(this.getSensors());
-                Iterator<Sensor> iterator = sensors.iterator();
-
-                while (iterator.hasNext()) {
-                    Sensor sensor = iterator.next();
-                    this.changeSensorActivationStatus(sensor, false);
-                }
+        // if system is armed, reset all sensors to inactive
+        if (armingStatus == ArmingStatus.ARMED_AWAY) {
+            for (Sensor sensor : securityRepository.getSensors()) {
+                sensor.setActive(false);
             }
         }
 
@@ -71,11 +79,11 @@ public final class SecurityService {
         this.isCatDetected = cat;
 
         if (cat && getArmingStatus() == ArmingStatus.ARMED_HOME) {
-            setAlarmStatus(AlarmStatus.ALARM);
+            this.setAlarmStatus(AlarmStatus.ALARM);
         } else if (!cat && this.getAllSensorsFromState(false)) {
-            setAlarmStatus(AlarmStatus.NO_ALARM);
+            this.setAlarmStatus(AlarmStatus.NO_ALARM);
         }
-        statusListeners.forEach(sl -> sl.catDetected(cat));
+        this.statusListeners.forEach(sl -> sl.catDetected(cat));
     }
 
     /**
@@ -83,11 +91,11 @@ public final class SecurityService {
      * @param statusListener
      */
     public void addStatusListener(StatusListener statusListener) {
-        statusListeners.add(statusListener);
+        this.statusListeners.add(statusListener);
     }
 
     public void removeStatusListener(StatusListener statusListener) {
-        statusListeners.remove(statusListener);
+        this.statusListeners.remove(statusListener);
     }
 
     /**
@@ -95,8 +103,8 @@ public final class SecurityService {
      * @param status
      */
     public void setAlarmStatus(AlarmStatus status) {
-        securityRepository.setAlarmStatus(status);
-        statusListeners.forEach(sl -> sl.notify(status));
+        this.securityRepository.setAlarmStatus(status);
+        this.statusListeners.forEach(sl -> sl.notify(status));
     }
 
     /**
