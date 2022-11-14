@@ -51,16 +51,8 @@ public final class SecurityService {
             }
         }
 
-
-
-
         // GOOD
         // if the system is armed-home while a cat is detected, the alarm should be set to alarm
-        else if (armingStatus == ArmingStatus.ARMED_HOME && isCatDetected) {
-            this.setAlarmStatus(AlarmStatus.ALARM);
-        }
-        // if alarm is armed and sensor becomes activates and the system is already pending alarm, set the alarm status to alarm
-
         else {
             // Prevents the systems to hit a ConcurrentModificationException when two sensors are modified on the same thread.
             // Implemented using a fail-safe iterator.
@@ -84,7 +76,7 @@ public final class SecurityService {
         }
 
         securityRepository.setArmingStatus(armingStatus);
-        statusListeners.forEach(sl -> sl.sensorStatusChanged());
+        statusListeners.forEach(StatusListener::sensorStatusChanged);
     }
 
     /**
@@ -132,24 +124,13 @@ public final class SecurityService {
             return; //no problem if the system is disarmed
         }
 
-        switch (this.securityRepository.getArmingStatus()) {
-            case ARMED_HOME -> {
-
-                if (this.securityRepository.areSensorsArmed()) {
-                    this.setAlarmStatus(AlarmStatus.ALARM);
-                } else {
-                    this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
-                }
+        if (this.securityRepository.getArmingStatus() == ArmingStatus.ARMED_HOME) {
+            if (this.securityRepository.areSensorsArmed()) {
+                this.setAlarmStatus(AlarmStatus.ALARM);
+            } else {
+                this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
             }
-
-            default -> {}
         }
-
-//        switch (this.securityRepository.getAlarmStatus()) {
-//            case NO_ALARM -> this.setAlarmStatus(AlarmStatus.PENDING_ALARM);
-//            case PENDING_ALARM -> this.setAlarmStatus(AlarmStatus.ALARM);
-//            default -> {} //do nothing if the alarm is already active
-//        }
     }
 
     /**
@@ -168,26 +149,10 @@ public final class SecurityService {
         }
     }
 
-    public void changeSensorActivationStatus(Sensor sensor) {
-        // NO_ALARM (Mock)
-        AlarmStatus actualAlarmStatus = this.securityRepository.getAlarmStatus();
-
-        // ARMED_HOME (Mock)
-        ArmingStatus actualArmingStatus = this.securityRepository.getArmingStatus();
-
-        if (actualAlarmStatus == AlarmStatus.PENDING_ALARM && !sensor.getActive()) {
-            this.handleSensorDeactivated();
-        } else if (actualAlarmStatus == AlarmStatus.ALARM && actualArmingStatus == ArmingStatus.DISARMED) {
-            this.handleSensorDeactivated();
-        }
-
-        this.securityRepository.updateSensor(sensor);
-    }
-
     /**
      * Change the activation status for the specified sensor and update alarm status if necessary.
      * @param sensor
-     *
+     * @param active
      */
     public void changeSensorActivationStatus(Sensor sensor, boolean active) {
 //        AlarmStatus actualAlarmStatus = this.securityRepository.getAlarmStatus();
